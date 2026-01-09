@@ -1,0 +1,27 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
+import billingsRoutes from "./routes/billings.js";
+
+dotenv.config();
+
+const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+app.use(express.json());
+
+app.get("/health", (_, res) => {
+  res.send("OK");
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/billings", billingsRoutes);
+
+app.listen(4000, () => {
+  console.log("Backend running on http://localhost:4000");
+});
