@@ -15,17 +15,18 @@ datasource db {
 }
 
 model User {
-  id         Int         @id @default(autoincrement())
-  email      String      @unique
-  password   String?
-  name       String?
-  avatar     String?
-  provider   String?     @default("local")
-  providerId String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  dashboards Dashboard[]
-  billings   Billing[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String?
+  name          String?
+  avatar        String?
+  provider      String?        @default("local")
+  providerId    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  dashboards    Dashboard[]
+  billings      Billing[]
+  refreshTokens RefreshToken[]
 
   @@unique([provider, providerId])
 }
@@ -49,4 +50,15 @@ model Billing {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

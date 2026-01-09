@@ -1,10 +1,16 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
 import axios from "axios";
 import bcrypt from "bcrypt";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../../prisma/client.js";
 import { authenticateToken } from "../middleware/auth.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  revokeRefreshToken,
+  revokeAllUserTokens,
+} from "../utils/tokens.js";
 
 const router = Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -36,12 +42,17 @@ router.post("/register", async (req, res) => {
       },
     });
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ token, user: userWithoutPassword });
+    res.json({
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -78,12 +89,17 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ token, user: userWithoutPassword });
+    res.json({
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    });
   } catch (error) {
     res.status(500).json({ error: "Login failed" });
   }
@@ -174,11 +190,16 @@ router.post("/google", async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id);
 
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ token, user: userWithoutPassword });
+    res.json({
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    });
   } catch (error) {
     console.error("Google login error:", error);
     res.status(500).json({
@@ -249,12 +270,17 @@ router.post("/facebook", async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id);
 
     // Return user data
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ token, user: userWithoutPassword });
+    res.json({
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    });
   } catch (error) {
     console.error("Facebook login error:", error);
 
@@ -269,6 +295,72 @@ router.post("/facebook", async (req, res) => {
       error: "Facebook login failed",
       details: error instanceof Error ? error.message : String(error),
     });
+  }
+});
+
+// POST /api/auth/refresh endpoint
+router.post("/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token is required" });
+    }
+
+    // Overí refresh token
+    const userId = await verifyRefreshToken(refreshToken);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+
+    // Vygeneruje nový access token
+    const accessToken = generateAccessToken(userId);
+
+    res.json({ accessToken });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    res.status(500).json({ error: "Token refresh failed" });
+  }
+});
+
+// POST /api/auth/logout endpoint
+router.post("/logout", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token is required" });
+    }
+
+    // Zneplatní refresh token
+    const success = await revokeRefreshToken(refreshToken);
+
+    if (!success) {
+      return res.status(404).json({ error: "Refresh token not found" });
+    }
+
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ error: "Logout failed" });
+  }
+});
+
+// POST /api/auth/logout-all endpoint - odhlási zo všetkých zariadení
+router.post("/logout-all", authenticateToken, async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Zneplatní všetky refresh tokeny používateľa
+    await revokeAllUserTokens(req.userId);
+
+    res.json({ message: "Logged out from all devices successfully" });
+  } catch (error) {
+    console.error("Logout all error:", error);
+    res.status(500).json({ error: "Logout from all devices failed" });
   }
 });
 
