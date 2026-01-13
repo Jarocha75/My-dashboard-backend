@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: dashboard-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dashboard_db}
+      MYSQL_USER: ${MYSQL_USER:-dashboard_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dashboard_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./prisma/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dashboard-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: mysql://${MYSQL_USER:-dashboard_user}:${MYSQL_PASSWORD:-dashboard_pass}@mysql:3306/${MYSQL_DATABASE:-dashboard_db}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - /app/node_modules
+      - /app/src/generated
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - dashboard-network
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  dashboard-network:
+    driver: bridge
