@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import billingsRoutes from "./routes/billings.js";
+import userRoutes from "./routes/user.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get("/health", (_, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/billings", billingsRoutes);
+app.use("/api/user", userRoutes);
 
 app.listen(4000, () => {
   console.log("Backend running on http://localhost:4000");
