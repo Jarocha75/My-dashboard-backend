@@ -1,0 +1,10 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `bio` TEXT NULL,
+    ADD COLUMN `displayName` VARCHAR(191) NULL,
+    ADD COLUMN `github` VARCHAR(191) NULL,
+    ADD COLUMN `linkedin` VARCHAR(191) NULL,
+    ADD COLUMN `location` VARCHAR(191) NULL,
+    ADD COLUMN `phoneNumber` VARCHAR(191) NULL,
+    ADD COLUMN `userName` VARCHAR(191) NULL,
+    ADD COLUMN `website` VARCHAR(191) NULL,
+    ADD COLUMN `whatsup` VARCHAR(191) NULL;

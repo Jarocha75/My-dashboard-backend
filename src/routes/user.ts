@@ -19,6 +19,15 @@ router.get("/profile", authenticateToken, async (req, res) => {
         name: true,
         avatar: true,
         provider: true,
+        phoneNumber: true,
+        userName: true,
+        displayName: true,
+        bio: true,
+        location: true,
+        website: true,
+        linkedin: true,
+        github: true,
+        whatsup: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -42,24 +51,48 @@ router.put("/profile", authenticateToken, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, avatar } = req.body;
+    const {
+      name,
+      avatar,
+      phoneNumber,
+      userName,
+      displayName,
+      bio,
+      location,
+      website,
+      linkedin,
+      github,
+      whatsup,
+    } = req.body;
 
-    // Validácia vstupných dát
-    if (name !== undefined && typeof name !== "string") {
-      return res.status(400).json({ error: "Name must be a string" });
-    }
+    // Zoznam povolených polí a ich hodnôt
+    const allowedFields = {
+      name,
+      avatar,
+      phoneNumber,
+      userName,
+      displayName,
+      bio,
+      location,
+      website,
+      linkedin,
+      github,
+      whatsup,
+    };
 
-    if (avatar !== undefined && typeof avatar !== "string") {
-      return res.status(400).json({ error: "Avatar must be a string" });
+    // Validácia - všetky polia musia byť string alebo null
+    for (const [key, value] of Object.entries(allowedFields)) {
+      if (value !== undefined && value !== null && typeof value !== "string") {
+        return res.status(400).json({ error: `${key} must be a string or null` });
+      }
     }
 
     // Priprav dáta na update - aktualizuj iba polia, ktoré boli poslané
-    const updateData: { name?: string; avatar?: string } = {};
-    if (name !== undefined) {
-      updateData.name = name;
-    }
-    if (avatar !== undefined) {
-      updateData.avatar = avatar;
+    const updateData: Record<string, string | null> = {};
+    for (const [key, value] of Object.entries(allowedFields)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
     }
 
     // Ak nie sú žiadne dáta na update, vráť chybu
@@ -76,6 +109,15 @@ router.put("/profile", authenticateToken, async (req, res) => {
         name: true,
         avatar: true,
         provider: true,
+        phoneNumber: true,
+        userName: true,
+        displayName: true,
+        bio: true,
+        location: true,
+        website: true,
+        linkedin: true,
+        github: true,
+        whatsup: true,
         createdAt: true,
         updatedAt: true,
       },

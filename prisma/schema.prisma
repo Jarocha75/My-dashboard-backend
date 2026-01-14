@@ -23,6 +23,15 @@ model User {
   avatar        String?
   provider      String?        @default("local")
   providerId    String?
+  phoneNumber   String?
+  userName      String?
+  displayName   String?
+  bio           String?        @db.Text
+  location      String?
+  website       String?
+  linkedin      String?
+  github        String?
+  whatsup       String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   dashboards    Dashboard[]
