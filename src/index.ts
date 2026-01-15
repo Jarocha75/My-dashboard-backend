@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 import authRoutes from "./routes/auth.js";
 import billingsRoutes from "./routes/billings.js";
 import userRoutes from "./routes/user.js";
@@ -15,6 +16,9 @@ app.use(
   })
 );
 app.use(express.json());
+
+// Statické servovanie uploadnutých súborov
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/health", (_, res) => {
   res.send("OK");
