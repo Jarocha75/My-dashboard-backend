@@ -7,6 +7,17 @@ import path from "path";
 
 const router = Router();
 
+const BASE_URL = process.env.BASE_URL || "http://localhost:4000";
+
+// Helper na pridanie plnej URL k lokálnemu avataru
+const formatAvatarUrl = (avatar: string | null): string | null => {
+  if (!avatar) return null;
+  if (avatar.startsWith("/uploads/")) {
+    return `${BASE_URL}${avatar}`;
+  }
+  return avatar;
+};
+
 // GET /api/user/profile - získa profil aktuálneho používateľa
 router.get("/profile", authenticateToken, async (req, res) => {
   try {
@@ -40,7 +51,7 @@ router.get("/profile", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(user);
+    res.json({ ...user, avatar: formatAvatarUrl(user.avatar) });
   } catch (error) {
     console.error("Get profile error:", error);
     res.status(500).json({ error: "Failed to get profile" });
@@ -126,7 +137,7 @@ router.put("/profile", authenticateToken, async (req, res) => {
       },
     });
 
-    res.json(updatedUser);
+    res.json({ ...updatedUser, avatar: formatAvatarUrl(updatedUser.avatar) });
   } catch (error) {
     console.error("Update profile error:", error);
     res.status(500).json({ error: "Failed to update profile" });
@@ -188,7 +199,7 @@ router.post(
         },
       });
 
-      res.json(updatedUser);
+      res.json({ ...updatedUser, avatar: formatAvatarUrl(updatedUser.avatar) });
     } catch (error) {
       console.error("Avatar upload error:", error);
       res.status(500).json({ error: "Failed to upload avatar" });
