@@ -5,6 +5,7 @@ import path from "path";
 import authRoutes from "./routes/auth.js";
 import billingsRoutes from "./routes/billings.js";
 import userRoutes from "./routes/user.js";
+import searchRoutes from "./routes/search.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get("/health", (_, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/billings", billingsRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/search", searchRoutes);
 
 app.listen(4000, () => {
   console.log("Backend running on http://localhost:4000");
