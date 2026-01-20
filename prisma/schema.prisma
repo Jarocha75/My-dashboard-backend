@@ -37,6 +37,8 @@ model User {
   dashboards    Dashboard[]
   billings      Billing[]
   refreshTokens RefreshToken[]
+  transactions  Transaction[]
+  invoices      Invoice[]
 
   @@unique([provider, providerId])
 }
@@ -69,6 +71,38 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  amount      Decimal  @db.Decimal(10, 2)
+  type        String   // "income" | "expense"
+  category    String?
+  description String?  @db.Text
+  date        DateTime @default(now())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Invoice {
+  id            Int       @id @default(autoincrement())
+  invoiceNumber String
+  clientName    String
+  clientEmail   String?
+  amount        Decimal   @db.Decimal(10, 2)
+  status        String    @default("draft") // "draft" | "sent" | "paid" | "cancelled"
+  dueDate       DateTime?
+  description   String?   @db.Text
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([userId])
 }

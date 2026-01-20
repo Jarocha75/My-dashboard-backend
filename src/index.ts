@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.js";
 import billingsRoutes from "./routes/billings.js";
 import userRoutes from "./routes/user.js";
 import searchRoutes from "./routes/search.js";
+import transactionsRoutes from "./routes/transactions.js";
+import invoicesRoutes from "./routes/invoices.js";
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/billings", billingsRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/transactions", transactionsRoutes);
+app.use("/api/invoices", invoicesRoutes);
 
 app.listen(4000, () => {
   console.log("Backend running on http://localhost:4000");
