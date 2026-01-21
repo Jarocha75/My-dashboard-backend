@@ -7,6 +7,24 @@ const router = Router();
 // Všetky routes sú chránené authentikáciou
 router.use(authenticateToken);
 
+// Helper funkcia na transformáciu transakcie z DB formátu na API formát
+const transformTransaction = (tx: {
+  id: number;
+  amount: any;
+  type: string;
+  category: string | null;
+  description: string | null;
+  date: Date;
+}) => ({
+  id: String(tx.id),
+  name: tx.category || "Transakcia",
+  ISO: tx.date.toISOString(),
+  amount: Number(tx.amount),
+  type: tx.type === "income" ? "deposit" : tx.type === "expense" ? "charge" : "pending",
+  description: tx.description || undefined,
+  category: tx.category || undefined,
+});
+
 // GET /api/transactions - Získať všetky transakcie používateľa
 router.get("/", async (req, res) => {
   try {
@@ -23,7 +41,7 @@ router.get("/", async (req, res) => {
       },
     });
 
-    res.json(transactions);
+    res.json(transactions.map(transformTransaction));
   } catch (error) {
     console.error("Get transactions error:", error);
     res.status(500).json({
@@ -53,7 +71,7 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    res.json(transaction);
+    res.json(transformTransaction(transaction));
   } catch (error) {
     console.error("Get transaction error:", error);
     res.status(500).json({
@@ -70,7 +88,7 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { amount, type, category, description, date } = req.body;
+    const { amount, type, name, category, description, ISO } = req.body;
 
     // Validácia
     if (amount === undefined || !type) {
@@ -79,24 +97,27 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (!["income", "expense"].includes(type)) {
+    if (!["deposit", "charge", "pending"].includes(type)) {
       return res.status(400).json({
-        error: "Type must be 'income' or 'expense'",
+        error: "Type must be 'deposit', 'charge' or 'pending'",
       });
     }
+
+    // Transformácia z API formátu na DB formát
+    const dbType = type === "deposit" ? "income" : type === "charge" ? "expense" : "pending";
 
     const transaction = await prisma.transaction.create({
       data: {
         amount,
-        type,
-        category,
+        type: dbType,
+        category: category || name,
         description,
-        date: date ? new Date(date) : new Date(),
+        date: ISO ? new Date(ISO) : new Date(),
         userId: req.userId,
       },
     });
 
-    res.status(201).json(transaction);
+    res.status(201).json(transformTransaction(transaction));
   } catch (error) {
     console.error("Create transaction error:", error);
     res.status(500).json({
@@ -114,7 +135,7 @@ router.put("/:id", async (req, res) => {
     }
 
     const { id } = req.params;
-    const { amount, type, category, description, date } = req.body;
+    const { amount, type, name, category, description, ISO } = req.body;
 
     // Overiť, že záznam patrí používateľovi
     const existingTransaction = await prisma.transaction.findFirst({
@@ -128,18 +149,19 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    if (type && !["income", "expense"].includes(type)) {
+    if (type && !["deposit", "charge", "pending"].includes(type)) {
       return res.status(400).json({
-        error: "Type must be 'income' or 'expense'",
+        error: "Type must be 'deposit', 'charge' or 'pending'",
       });
     }
 
     const updateData: any = {};
     if (amount !== undefined) updateData.amount = amount;
-    if (type !== undefined) updateData.type = type;
+    if (type !== undefined) updateData.type = type === "deposit" ? "income" : type === "charge" ? "expense" : "pending";
+    if (name !== undefined) updateData.category = name;
     if (category !== undefined) updateData.category = category;
     if (description !== undefined) updateData.description = description;
-    if (date !== undefined) updateData.date = new Date(date);
+    if (ISO !== undefined) updateData.date = new Date(ISO);
 
     const transaction = await prisma.transaction.update({
       where: {
@@ -148,7 +170,7 @@ router.put("/:id", async (req, res) => {
       data: updateData,
     });
 
-    res.json(transaction);
+    res.json(transformTransaction(transaction));
   } catch (error) {
     console.error("Update transaction error:", error);
     res.status(500).json({
