@@ -8,6 +8,7 @@ import userRoutes from "./routes/user.js";
 import searchRoutes from "./routes/search.js";
 import transactionsRoutes from "./routes/transactions.js";
 import invoicesRoutes from "./routes/invoices.js";
+import paymentMethod from "./routes/payment-method.js";
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -33,6 +34,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/transactions", transactionsRoutes);
 app.use("/api/invoices", invoicesRoutes);
+app.use("/api/payment-method", paymentMethod);
 
 app.listen(4000, () => {
   console.log("Backend running on http://localhost:4000");
