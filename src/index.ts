@@ -1,6 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import path from "path";
 import authRoutes from "./routes/auth.js";
 import billingsRoutes from "./routes/billings.js";
@@ -9,8 +11,6 @@ import searchRoutes from "./routes/search.js";
 import transactionsRoutes from "./routes/transactions.js";
 import invoicesRoutes from "./routes/invoices.js";
 import paymentMethod from "./routes/payment-method.js";
-
-dotenv.config();
 
 const app = express();
 app.use(
