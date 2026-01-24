@@ -48,12 +48,29 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { paymentMethodId } = req.body;
+    let { paymentMethodId, cardBrand, brand, type } = req.body;
 
+    // Pre vývoj: ak nie je paymentMethodId, vytvor testovaciu kartu
     if (!paymentMethodId) {
-      return res.status(400).json({
-        error: "Missing required field: paymentMethodId",
+      const testTokens: Record<string, string> = {
+        visa: "tok_visa",
+        mastercard: "tok_mastercard",
+        amex: "tok_amex",
+        discover: "tok_discover",
+        diners: "tok_diners",
+        jcb: "tok_jcb",
+        unionpay: "tok_unionpay",
+      };
+
+      // Akceptuj cardBrand, brand alebo type
+      const selectedBrand = cardBrand || brand || type;
+      const token = testTokens[selectedBrand?.toLowerCase()] || "tok_visa";
+
+      const testPaymentMethod = await stripe.paymentMethods.create({
+        type: "card",
+        card: { token },
       });
+      paymentMethodId = testPaymentMethod.id;
     }
 
     // Získať kartu zo Stripe
